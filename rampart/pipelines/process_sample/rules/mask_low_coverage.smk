@@ -1,16 +1,16 @@
 rule map_to_cns:
     input:
-        cns = rules.clean5.output,
-        reads = rules.files.params.reads
+        cns = config["output_path"] + "/binned_{sample}/polishing/{analysis_stem}/medaka.clean.fasta",
+        reads = config["output_path"]+"/binned_{sample}/{analysis_stem}.primer_trimmed.fastq"
     output:
-        paf = config["output_path"] + "/binned_{sample}/medaka/{analysis_stem}/consensus.mapped.paf"
+        config["output_path"] + "/binned_{sample}/medaka/{analysis_stem}/consensus.mapped.paf"
     shell:
         "minimap2 -x map-ont {input.cns} {input.reads} > {output}"
 
 rule mask_low_coverage_regions:
     input:
-        cns = rules.clean5.output,
-        paf = config["output_path"] + "/binned_{sample}/medaka/{analysis_stem}/consensus.mapped.paf"
+        cns = config["output_path"] + "/binned_{sample}/polishing/{analysis_stem}/medaka.clean.fasta",
+        paf = rules.map_to_cns.output
     params:
         path_to_script = workflow.current_basedir
     output:
