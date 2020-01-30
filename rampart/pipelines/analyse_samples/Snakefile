@@ -15,6 +15,7 @@ if config.get("output_path"):
 else:
     config["output_path"] = "analysis"
 
+
 stems = PersistentDict("stem_store")
 
 
@@ -68,9 +69,8 @@ def write_csv_files_with_only_one_header(csv_files, output_file):
 rule all:
     input:
         expand(config["output_path"] + "/consensus_sequences/{sample}.fasta",sample=samples),
-        expand(config["output_path"] + "/reports/{sample}.report.md",sample=samples),
-        expand(config["output_path"] + "/binned_{sample}.csv",sample=samples),
-        config["output_path"] + "/sample_composition_summary.csv"
+        expand(config["output_path"] + "/binned_{sample}.csv",sample=samples)
+        # config["output_path"] + "/sample_composition_summary.csv"
 
 rule binlorry:
     input:
@@ -136,7 +136,7 @@ rule rename_to_samples:
 rule assign_amplicon:
     input:
         csv= config["output_path"] + "/binned_{sample}.csv",
-        amplicons = config["amplicon_csv"]
+        amplicons = workflow.current_basedir +"/../../primer_file.csv"
     params:
         sample = "{sample}",
         path_to_script = workflow.current_basedir
@@ -165,7 +165,7 @@ rule assess_sample:
     output:
         t = temp(config["output_path"] + "/binned_{sample}/temp.txt")
     run:
-        for i in shell(
+        for stdout_line in shell(
             "python {params.path_to_script}/parse_noro_ref_and_depth.py "
             "--reads {input.reads} "
             "--csv {input.csv} "
@@ -175,8 +175,8 @@ rule assess_sample:
             "--min_pcent {params.min_pcent} "
             "--references {input.refs} "
             "--sample {params.sample}  && touch {output.t}", iterable=True):
-
-            stems.store("analysis_stem",i)
+            print(stdout_line)
+            stems.store(params.sample,stdout_line)
 
 rule process_sample:
     input:
@@ -189,7 +189,7 @@ rule process_sample:
     output:
         cns = config["output_path"] + "/consensus_sequences/{sample}.fasta"
     run:
-        analysis_stem = stems.fetch("analysis_stem")
+        analysis_stem = stems.fetch(params.sample)
         if analysis_stem != "":
             print("Passing {} into processing pipeline.".format(analysis_stem))
             config["analysis_stem"]= analysis_stem
