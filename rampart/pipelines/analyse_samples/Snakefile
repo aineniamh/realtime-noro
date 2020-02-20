@@ -200,4 +200,4 @@ rule process_sample:
                         "output_path={params.output_path} "
                         "sample={params.sample}")
         else:
-            print("Not enough reads to pass an analysis stem to processing pipeline.")
+           shell("touch {output.cns} ")
